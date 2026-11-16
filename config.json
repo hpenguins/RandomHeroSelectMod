@@ -1,0 +1,109 @@
+{
+  "enabled": true,
+  "pveLevel": 0,
+  "requireOwned": true,
+  "shuffleMinClicks": 22,
+  "shuffleMaxClicks": 34,
+  "clickIntervalMs": 80,
+  "delayMilliseconds": 600,
+  "confirmDelayMilliseconds": 400,
+  "autoConfirm": true,
+  "rerollOnTaken": true,
+  "maxRetry": 3,
+  "autoConfirmSkin": false,
+  "triggerKey": "",
+  "rerollKey": "",
+  "randomSeed": 0,
+  "_comments": {
+    "enabled": {
+      "zh-Hans": "总开关：开启后，进入选人阶段会自动随机点卡并落定。",
+      "zh-Hant": "總開關：開啟後，進入選人階段會自動隨機點卡並落定。",
+      "en": "Master switch: when on, randomly shuffles hero cards and picks one once selection starts.",
+      "ja": "全体スイッチ：オンにすると、キャラクター選択開始時に自動でランダムにカードを選び確定します。"
+    },
+    "pveLevel": {
+      "zh-Hans": "视为「满级」的 PVE 升星等级，0 表示自动读取配置表当前上限（现为 6）。仅对 PVE 生效。",
+      "zh-Hant": "視為「滿級」的 PVE 升星等級，0 表示自動讀取設定表目前上限（現為 6）。僅對 PVE 生效。",
+      "en": "PVE star-up level considered maxed; 0 reads the current cap from config (6). PVE only.",
+      "ja": "「最大レベル」とみなす PVE 昇星レベル。0 は設定表の現在の上限（6）を自動取得。PVE のみ。"
+    },
+    "requireOwned": {
+      "zh-Hans": "是否只抽已拥有的角色（关闭后试用角色也会进候选）。",
+      "zh-Hant": "是否只抽已擁有的角色（關閉後試用角色也會進候選）。",
+      "en": "Only pick heroes you own; turn off to include trial heroes.",
+      "ja": "所持済みキャラクターのみ対象にする。オフにすると体験キャラクターも候補に入ります。"
+    },
+    "shuffleMinClicks": {
+      "zh-Hans": "乱点时最少点几张卡，范围 1–99，默认 22。",
+      "zh-Hant": "亂點時最少點幾張卡，範圍 1–99，預設 22。",
+      "en": "Minimum number of random card clicks during the shuffle (1–99, default 22).",
+      "ja": "ランダムにクリックする最小回数（1～99、既定 22）。"
+    },
+    "shuffleMaxClicks": {
+      "zh-Hans": "乱点时最多点几张卡，范围 1–99，默认 34；小于最小值时自动取最小值。",
+      "zh-Hant": "亂點時最多點幾張卡，範圍 1–99，預設 34；小於最小值時自動取最小值。",
+      "en": "Maximum number of random card clicks during the shuffle (1–99, default 34); clamped to the minimum.",
+      "ja": "ランダムにクリックする最大回数（1～99、既定 34）。最小値未満なら最小値を使用。"
+    },
+    "clickIntervalMs": {
+      "zh-Hans": "两次点卡之间的间隔（毫秒，0–2000，默认 80），实际会上下抖动约 20%。",
+      "zh-Hant": "兩次點卡之間的間隔（毫秒，0–2000，預設 80），實際會上下抖動約 20%。",
+      "en": "Delay between card clicks in milliseconds (0–2000, default 80), jittered by about 20%.",
+      "ja": "カードクリック間隔（ミリ秒、0～2000、既定 80）。実際は約 20% 上下にばらつきます。"
+    },
+    "delayMilliseconds": {
+      "zh-Hans": "进入选人阶段后先等多久再开始（毫秒，0–10000，默认 600），用于等卡面渲染完。",
+      "zh-Hant": "進入選人階段後先等多久再開始（毫秒，0～10000，預設 600），用於等卡面渲染完成。",
+      "en": "Delay before starting once selection opens, in milliseconds (0–10000, default 600).",
+      "ja": "選択画面が開いてから開始するまでの待ち時間（ミリ秒、0～10000、既定 600）。"
+    },
+    "confirmDelayMilliseconds": {
+      "zh-Hans": "落定后等多久再点确定（毫秒，0–10000，默认 400）。",
+      "zh-Hant": "落定後等多久再點確定（毫秒、0～10000、預設 400）。",
+      "en": "Delay before confirming the final pick, in milliseconds (0–10000, default 400).",
+      "ja": "最終選択を確定するまでの待ち時間（ミリ秒、0～10000、既定 400）。"
+    },
+    "autoConfirm": {
+      "zh-Hans": "是否自动点确定；关闭后只落定不确认，由你手动确认。",
+      "zh-Hant": "是否自動點確定；關閉後只落定不確認，由你手動確認。",
+      "en": "Automatically confirm the pick; turn off to confirm manually.",
+      "ja": "自動で確定するか。オフにすると手動で確定します。"
+    },
+    "rerollOnTaken": {
+      "zh-Hans": "落定的角色被别人抢走时，自动从剩余候选里重抽。",
+      "zh-Hant": "落定的角色被別人搶走時，自動從剩餘候選裡重抽。",
+      "en": "Re-roll from the remaining candidates when someone else takes your pick first.",
+      "ja": "選んだキャラクターが他プレイヤーに取られた場合、残りの候補から選び直します。"
+    },
+    "maxRetry": {
+      "zh-Hans": "被抢后最多重抽几次，范围 0–9，默认 3。",
+      "zh-Hant": "被搶後最多重抽幾次，範圍 0～9，預設 3。",
+      "en": "Maximum number of re-rolls after being taken (0–9, default 3).",
+      "ja": "取り直しの最大回数（0～9、既定 3）。"
+    },
+    "autoConfirmSkin": {
+      "zh-Hans": "角色确认之后，是否自动选定并确认皮肤（默认关闭）。",
+      "zh-Hant": "角色確認之後，是否自動選定並確認造型（預設關閉）。",
+      "en": "Automatically choose and confirm a skin after the hero is confirmed (default off).",
+      "ja": "キャラクター確定後、自動でスキンを選択・確定するか（既定オフ）。"
+    },
+    "triggerKey": {
+      "zh-Hans": "手动触发一次随机选人的快捷键（默认空，留空不绑定）。",
+      "zh-Hant": "手動觸發一次隨機選人的快捷鍵（預設空，留空不綁定）。",
+      "en": "Hotkey to trigger a random pick manually (default empty = disabled).",
+      "ja": "手動でランダム選択を開始するホットキー（既定空＝無効）。"
+    },
+    "rerollKey": {
+      "zh-Hans": "手动重抽一次目标的快捷键（默认空，留空不绑定）。",
+      "zh-Hant": "手動重抽一次目標的快捷鍵（預設空，留空不綁定）。",
+      "en": "Hotkey to re-roll the final target manually (default empty = disabled).",
+      "ja": "最終ターゲットを手動で選び直すホットキー（既定空＝無効）。"
+    },
+    "randomSeed": {
+      "zh-Hans": "随机种子，0 表示每次真随机；填非 0 可复现同一套点击顺序（调试用）。",
+      "zh-Hant": "隨機種子，0 表示每次真隨機；填非 0 可重現同一套點擊順序（除錯用）。",
+      "en": "Random seed; 0 means truly random each time, non-zero reproduces the same click order (debug).",
+      "ja": "乱数シード。0 は毎回真ランダム、0 以外は同じクリック順を再現します（デバッグ用）。"
+    }
+  }
+}

@@ -1,0 +1,133 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+      - "[0-9]+.[0-9]+.[0-9]+"
+      - "*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CESIUM_LOADER_REF: modloader-3.8.6
+
+jobs:
+  build:
+    name: Build and package
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Prepare reference assemblies
+        shell: pwsh
+        run: pwsh -NoProfile -File tools/fetch-refs.ps1 -CesiumLoaderRef $env:CESIUM_LOADER_REF
+
+      - name: Resolve version
+        id: version
+        shell: pwsh
+        run: |
+          if ("${{ github.ref_type }}" -eq "tag") {
+            $version = "${{ github.ref_name }}" -replace '^v', ''
+          } else {
+            $version = "manual-${{ github.run_number }}"
+          }
+          "version=$version" >> $env:GITHUB_OUTPUT
+          Write-Host "version=$version"
+
+      - name: Verify sidecar version
+        shell: pwsh
+        run: |
+          if ("${{ github.ref_type }}" -ne "tag") { Write-Host "手动构建, 跳过标签校验"; exit 0 }
+          $sidecar = Get-Content RandomHeroSelectMod.json -Raw | ConvertFrom-Json
+          if ($sidecar.version -ne "${{ steps.version.outputs.version }}") {
+            throw "标签版本 ${{ steps.version.outputs.version }} 与 RandomHeroSelectMod.json 的 version $($sidecar.version) 不一致"
+          }
+
+      - name: Build
+        shell: pwsh
+        run: |
+          dotnet build source/RandomHeroSelectMod.csproj -c Release --nologo
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Run tests
+        shell: pwsh
+        run: |
+          dotnet test tests/RandomHeroSelectMod.Tests/RandomHeroSelectMod.Tests.csproj -c Release --nologo
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Stage package
+        shell: pwsh
+        run: |
+          $out = "source/bin/Release/netstandard2.0"
+          $stage = "staging/RandomHeroSelectMod"
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+          foreach ($file in @("RandomHeroSelectMod.dll", "RandomHeroSelectMod.pdb")) {
+            $path = Join-Path $out $file
+            if (-not (Test-Path $path)) { throw "缺少构建产物: $path" }
+            Copy-Item $path $stage -Force
+          }
+          Copy-Item "RandomHeroSelectMod.json" $stage -Force
+          if (Test-Path "config.json") {
+            Copy-Item "config.json" $stage -Force
+          }
+
+          $zip = "RandomHeroSelectMod-${{ steps.version.outputs.version }}.zip"
+          Compress-Archive -Path staging/RandomHeroSelectMod -DestinationPath $zip -CompressionLevel Optimal
+          Copy-Item $zip "RandomHeroSelectMod.zip" -Force
+          Get-ChildItem *.zip | Select-Object Name, Length
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: random-hero-select-package
+          path: RandomHeroSelectMod*.zip
+          if-no-files-found: error
+          retention-days: 1
+
+  release:
+    name: Create release
+    if: github.ref_type == 'tag'
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download package
+        uses: actions/download-artifact@v4
+        with:
+          name: random-hero-select-package
+          path: artifacts
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: 随机选人 ${{ github.ref_name }}
+          files: artifacts/*.zip
+          fail_on_unmatched_files: true
+          body: |
+            ## 安装
+
+            1. 下载本页附件里的 `RandomHeroSelectMod-<版本>.zip`（或固定地址 `RandomHeroSelectMod.zip`）。
+            2. 解压到游戏 exe 目录下的 `AstralParty_ModLoader\mods\`，得到 `mods\RandomHeroSelectMod\RandomHeroSelectMod.dll`、`RandomHeroSelectMod.json` 与 `config.json`。
+            3. 启动游戏。已有旧版本时覆盖更新即可。
+
+            需要 CesiumLoader（SDK 不低于 3.8.5）。卸载时删除 `mods\RandomHeroSelectMod\` 目录。
+
+            ## 说明
+
+            - 进入选人阶段后按随机顺序逐张点击角色卡，再从「已拥有 + PVE 升星满级」的候选里随机落定一个并自动确认。
+            - 本局禁选、已被别人占用、场馆未解锁、卡面置灰的角色不会进入候选。
+            - 落定后被别人抢先确认时，自动从剩余候选重抽。
+            - 点击走游戏自己的按钮回调，选中动画、音效、气泡与发包均为原生行为，未安装本模组的玩家不受影响。
+            - 配置位于 `mods\RandomHeroSelectMod\config.json`，也可在 AstralParty.Toys 的模组配置页修改。
+            - 完整说明与配置项见仓库 [README](${{ github.server_url }}/${{ github.repository }}#readme)。

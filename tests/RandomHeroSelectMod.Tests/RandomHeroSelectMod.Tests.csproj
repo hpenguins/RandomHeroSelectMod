@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <Nullable>disable</Nullable>
+    <NuGetAudit>false</NuGetAudit>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+  <!--
+    纯逻辑层直接编进测试工程, 不引用 mod 工程:
+    mod 工程引用 CesiumLoader.SDK 与游戏热更程序集, 在普通 .NET 测试宿主里加载不了,
+    而 HeroPicker / ShufflePlan 刻意不依赖任何游戏类型, 正好可以单独编。
+  -->
+  <ItemGroup>
+    <Compile Include="../../source/HeroPicker.cs" Link="Linked/HeroPicker.cs" />
+    <Compile Include="../../source/ShufflePlan.cs" Link="Linked/ShufflePlan.cs" />
+  </ItemGroup>
+</Project>
