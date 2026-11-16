@@ -21,7 +21,7 @@
 #>
 [CmdletBinding()]
 param(
-    [string] $CesiumLoaderRef = 'modloader-3.8.5',
+    [string] $CesiumLoaderRef = 'modloader-3.8.6',
     [string] $Source,
     [switch] $Force
 )
