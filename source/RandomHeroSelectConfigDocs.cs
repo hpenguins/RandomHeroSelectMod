@@ -11,10 +11,10 @@ namespace RandomHeroSelectMod
             bool changed = false;
 
             changed |= config.Describe("enabled", D(
-                "总开关：开启后，进入选人阶段会自动随机点卡并落定。",
-                "總開關：開啟後，進入選人階段會自動隨機點卡並落定。",
-                "Master switch: when on, randomly shuffles hero cards and picks one once selection starts.",
-                "全体スイッチ：オンにすると、キャラクター選択開始時に自動でランダムにカードを選び確定します。"));
+                "总开关：开启后，选人阶段右侧会显示「随机选人」按钮，点击后开始随机点卡并落定。",
+                "總開關：開啟後，選人階段右側會顯示「隨機選人」按鈕，點擊後開始隨機點卡並落定。",
+                "Master switch: when on, a Random Pick button appears at the right edge during hero selection; click it to shuffle and pick.",
+                "全体スイッチ：オンにすると、キャラクター選択中に画面右端へ「ランダム選択」ボタンが表示され、押すと自動でランダムにカードを選び、最終候補を1枚選びます。"));
 
             changed |= config.Describe("pveLevel", D(
                 "视为「满级」的 PVE 升星等级，0 表示自动读取配置表当前上限（现为 6）。仅对 PVE 生效。",
@@ -47,22 +47,16 @@ namespace RandomHeroSelectMod
                 "カードクリック間隔（ミリ秒、0～2000、既定 80）。実際は約 20% 上下にばらつきます。"));
 
             changed |= config.Describe("delayMilliseconds", D(
-                "进入选人阶段后先等多久再开始（毫秒，0–10000，默认 600），用于等卡面渲染完。",
-                "進入選人階段後先等多久再開始（毫秒，0～10000，預設 600），用於等卡面渲染完成。",
-                "Delay before starting once selection opens, in milliseconds (0–10000, default 600).",
-                "選択画面が開いてから開始するまでの待ち時間（ミリ秒、0～10000、既定 600）。"));
+                "点击按钮后先等多久再开始乱点（毫秒，0–10000，默认 600），用于等卡面渲染完。",
+                "點擊按鈕後先等多久再開始亂點（毫秒，0～10000，預設 600），用於等卡面渲染完成。",
+                "Delay after clicking the button before shuffling starts, in milliseconds (0–10000, default 600).",
+                "ボタンを押してからランダム選択を始めるまでの待ち時間（ミリ秒、0～10000、既定 600）。"));
 
             changed |= config.Describe("confirmDelayMilliseconds", D(
-                "落定后等多久再点确定（毫秒，0–10000，默认 400）。",
-                "落定後等多久再點確定（毫秒、0～10000、預設 400）。",
-                "Delay before confirming the final pick, in milliseconds (0–10000, default 400).",
-                "最終選択を確定するまでの待ち時間（ミリ秒、0～10000、既定 400）。"));
-
-            changed |= config.Describe("autoConfirm", D(
-                "是否自动点确定；关闭后只落定不确认，由你手动确认。",
-                "是否自動點確定；關閉後只落定不確認，由你手動確認。",
-                "Automatically confirm the pick; turn off to confirm manually.",
-                "自動で確定するか。オフにすると手動で確定します。"));
+                "角色确认后，自动确认皮肤前等待多久（毫秒，0–10000，默认 400）。",
+                "角色確認後，自動確認造型前等待多久（毫秒、0～10000、預設 400）。",
+                "Delay before auto-confirming a skin after the hero is confirmed, in milliseconds (0–10000, default 400).",
+                "キャラクター確定後、スキンを自動確定するまでの待ち時間（ミリ秒、0～10000、既定 400）。"));
 
             changed |= config.Describe("rerollOnTaken", D(
                 "落定的角色被别人抢走时，自动从剩余候选里重抽。",
@@ -83,10 +77,10 @@ namespace RandomHeroSelectMod
                 "キャラクター確定後、自動でスキンを選択・確定するか（既定オフ）。"));
 
             changed |= config.Describe("triggerKey", D(
-                "手动触发一次随机选人的快捷键（默认空，留空不绑定）。",
-                "手動觸發一次隨機選人的快捷鍵（預設空，留空不綁定）。",
-                "Hotkey to trigger a random pick manually (default empty = disabled).",
-                "手動でランダム選択を開始するホットキー（既定空＝無効）。"));
+                "手动触发一次随机选人的快捷键（默认空，留空不绑定；也可以直接点右侧按钮）。",
+                "手動觸發一次隨機選人的快捷鍵（預設空，留空不綁定；也可以直接點右側按鈕）。",
+                "Hotkey to trigger a random pick manually (default empty = disabled); the right-edge button does the same.",
+                "手動でランダム選択を開始するホットキー（既定空＝無効）。画面右端のボタンでも開始できます。"));
 
             changed |= config.Describe("rerollKey", D(
                 "手动重抽一次目标的快捷键（默认空，留空不绑定）。",
@@ -99,6 +93,24 @@ namespace RandomHeroSelectMod
                 "隨機種子，0 表示每次真隨機；填非 0 可重現同一套點擊順序（除錯用）。",
                 "Random seed; 0 means truly random each time, non-zero reproduces the same click order (debug).",
                 "乱数シード。0 は毎回真ランダム、0 以外は同じクリック順を再現します（デバッグ用）。"));
+
+            changed |= config.Describe("buttonAnchor", D(
+                "按钮停靠的屏幕位置：right（默认，右边居中）/ left / top / bottom / topLeft / topRight / bottomLeft / bottomRight / center；也接受 MiddleRight 这类枚举名。",
+                "按鈕停靠的螢幕位置：right（預設，右邊居中）/ left / top / bottom / topLeft / topRight / bottomLeft / bottomRight / center；也接受 MiddleRight 這類列舉名。",
+                "Where the button sits: right (default, middle of the right edge), left, top, bottom, topLeft, topRight, bottomLeft, bottomRight, center; full enum names like MiddleRight also work.",
+                "ボタンの位置：right（既定、右端中央）/ left / top / bottom / topLeft / topRight / bottomLeft / bottomRight / center。MiddleRight などの列挙名も使えます。"));
+
+            changed |= config.Describe("buttonOffsetX", D(
+                "在锚点基础上再横向偏移多少像素（默认 0，正数向右，负数向左）。",
+                "在錨點基礎上再橫向偏移多少像素（預設 0，正數向右，負數向左）。",
+                "Extra horizontal offset in pixels from the anchor (default 0; positive moves right).",
+                "アンカーからの横方向の追加オフセット（ピクセル、既定 0、正で右）。"));
+
+            changed |= config.Describe("buttonOffsetY", D(
+                "在锚点基础上再纵向偏移多少像素（默认 0，正数向上，负数向下）。",
+                "在錨點基礎上再縱向偏移多少像素（預設 0，正數向上，負數向下）。",
+                "Extra vertical offset in pixels from the anchor (default 0; positive moves up).",
+                "アンカーからの縦方向の追加オフセット（ピクセル、既定 0、正で上）。"));
 
             return changed;
         }

@@ -5,7 +5,7 @@
     <Nullable>disable</Nullable>
     <AssemblyName>RandomHeroSelectMod</AssemblyName>
     <RootNamespace>RandomHeroSelectMod</RootNamespace>
-    <Version>1.0.0</Version>
+    <Version>1.2.0</Version>
     <LoaderDir Condition="'$(LoaderDir)' == ''">$(MSBuildThisFileDirectory)../../../msvc/dist/modloader/AstralParty_ModLoader</LoaderDir>
   </PropertyGroup>
   <ItemGroup>

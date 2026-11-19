@@ -7,19 +7,21 @@
   "clickIntervalMs": 80,
   "delayMilliseconds": 600,
   "confirmDelayMilliseconds": 400,
-  "autoConfirm": true,
   "rerollOnTaken": true,
   "maxRetry": 3,
   "autoConfirmSkin": false,
   "triggerKey": "",
   "rerollKey": "",
   "randomSeed": 0,
+  "buttonAnchor": "right",
+  "buttonOffsetX": 0,
+  "buttonOffsetY": 0,
   "_comments": {
     "enabled": {
-      "zh-Hans": "总开关：开启后，进入选人阶段会自动随机点卡并落定。",
-      "zh-Hant": "總開關：開啟後，進入選人階段會自動隨機點卡並落定。",
-      "en": "Master switch: when on, randomly shuffles hero cards and picks one once selection starts.",
-      "ja": "全体スイッチ：オンにすると、キャラクター選択開始時に自動でランダムにカードを選び確定します。"
+      "zh-Hans": "总开关：开启后，选人阶段右侧会显示「随机选人」按钮，点击后开始随机点卡并落定。",
+      "zh-Hant": "總開關：開啟後，選人階段右側會顯示「隨機選人」按鈕，點擊後開始隨機點卡並落定。",
+      "en": "Master switch: when on, a Random Pick button appears at the right edge during hero selection; click it to shuffle and pick.",
+      "ja": "全体スイッチ：オンにすると、キャラクター選択中に画面右端へ「ランダム選択」ボタンが表示され、押すと自動でランダムにカードを選び、最終候補を1枚選びます。"
     },
     "pveLevel": {
       "zh-Hans": "视为「满级」的 PVE 升星等级，0 表示自动读取配置表当前上限（现为 6）。仅对 PVE 生效。",
@@ -52,22 +54,16 @@
       "ja": "カードクリック間隔（ミリ秒、0～2000、既定 80）。実際は約 20% 上下にばらつきます。"
     },
     "delayMilliseconds": {
-      "zh-Hans": "进入选人阶段后先等多久再开始（毫秒，0–10000，默认 600），用于等卡面渲染完。",
-      "zh-Hant": "進入選人階段後先等多久再開始（毫秒，0～10000，預設 600），用於等卡面渲染完成。",
-      "en": "Delay before starting once selection opens, in milliseconds (0–10000, default 600).",
-      "ja": "選択画面が開いてから開始するまでの待ち時間（ミリ秒、0～10000、既定 600）。"
+      "zh-Hans": "点击按钮后先等多久再开始乱点（毫秒，0–10000，默认 600），用于等卡面渲染完。",
+      "zh-Hant": "點擊按鈕後先等多久再開始亂點（毫秒，0～10000，預設 600），用於等卡面渲染完成。",
+      "en": "Delay after clicking the button before shuffling starts, in milliseconds (0–10000, default 600).",
+      "ja": "ボタンを押してからランダム選択を始めるまでの待ち時間（ミリ秒、0～10000、既定 600）。"
     },
     "confirmDelayMilliseconds": {
-      "zh-Hans": "落定后等多久再点确定（毫秒，0–10000，默认 400）。",
-      "zh-Hant": "落定後等多久再點確定（毫秒、0～10000、預設 400）。",
-      "en": "Delay before confirming the final pick, in milliseconds (0–10000, default 400).",
-      "ja": "最終選択を確定するまでの待ち時間（ミリ秒、0～10000、既定 400）。"
-    },
-    "autoConfirm": {
-      "zh-Hans": "是否自动点确定；关闭后只落定不确认，由你手动确认。",
-      "zh-Hant": "是否自動點確定；關閉後只落定不確認，由你手動確認。",
-      "en": "Automatically confirm the pick; turn off to confirm manually.",
-      "ja": "自動で確定するか。オフにすると手動で確定します。"
+      "zh-Hans": "角色确认后，自动确认皮肤前等待多久（毫秒，0–10000，默认 400）。",
+      "zh-Hant": "角色確認後，自動確認造型前等待多久（毫秒、0～10000、預設 400）。",
+      "en": "Delay before auto-confirming a skin after the hero is confirmed, in milliseconds (0–10000, default 400).",
+      "ja": "キャラクター確定後、スキンを自動確定するまでの待ち時間（ミリ秒、0～10000、既定 400）。"
     },
     "rerollOnTaken": {
       "zh-Hans": "落定的角色被别人抢走时，自动从剩余候选里重抽。",
@@ -88,10 +84,10 @@
       "ja": "キャラクター確定後、自動でスキンを選択・確定するか（既定オフ）。"
     },
     "triggerKey": {
-      "zh-Hans": "手动触发一次随机选人的快捷键（默认空，留空不绑定）。",
-      "zh-Hant": "手動觸發一次隨機選人的快捷鍵（預設空，留空不綁定）。",
-      "en": "Hotkey to trigger a random pick manually (default empty = disabled).",
-      "ja": "手動でランダム選択を開始するホットキー（既定空＝無効）。"
+      "zh-Hans": "手动触发一次随机选人的快捷键（默认空，留空不绑定；也可以直接点右侧按钮）。",
+      "zh-Hant": "手動觸發一次隨機選人的快捷鍵（預設空，留空不綁定；也可以直接點右側按鈕）。",
+      "en": "Hotkey to trigger a random pick manually (default empty = disabled); the right-edge button does the same.",
+      "ja": "手動でランダム選択を開始するホットキー（既定空＝無効）。画面右端のボタンでも開始できます。"
     },
     "rerollKey": {
       "zh-Hans": "手动重抽一次目标的快捷键（默认空，留空不绑定）。",
@@ -104,6 +100,24 @@
       "zh-Hant": "隨機種子，0 表示每次真隨機；填非 0 可重現同一套點擊順序（除錯用）。",
       "en": "Random seed; 0 means truly random each time, non-zero reproduces the same click order (debug).",
       "ja": "乱数シード。0 は毎回真ランダム、0 以外は同じクリック順を再現します（デバッグ用）。"
+    },
+    "buttonAnchor": {
+      "zh-Hans": "按钮停靠的屏幕位置：right（默认，右边居中）/ left / top / bottom / topLeft / topRight / bottomLeft / bottomRight / center；也接受 MiddleRight 这类枚举名。",
+      "zh-Hant": "按鈕停靠的螢幕位置：right（預設，右邊居中）/ left / top / bottom / topLeft / topRight / bottomLeft / bottomRight / center；也接受 MiddleRight 這類列舉名。",
+      "en": "Where the button sits: right (default, middle of the right edge), left, top, bottom, topLeft, topRight, bottomLeft, bottomRight, center; full enum names like MiddleRight also work.",
+      "ja": "ボタンの位置：right（既定、右端中央）/ left / top / bottom / topLeft / topRight / bottomLeft / bottomRight / center。MiddleRight などの列挙名も使えます。"
+    },
+    "buttonOffsetX": {
+      "zh-Hans": "在锚点基础上再横向偏移多少像素（默认 0，正数向右，负数向左）。",
+      "zh-Hant": "在錨點基礎上再橫向偏移多少像素（預設 0，正數向右，負數向左）。",
+      "en": "Extra horizontal offset in pixels from the anchor (default 0; positive moves right).",
+      "ja": "アンカーからの横方向の追加オフセット（ピクセル、既定 0、正で右）。"
+    },
+    "buttonOffsetY": {
+      "zh-Hans": "在锚点基础上再纵向偏移多少像素（默认 0，正数向上，负数向下）。",
+      "zh-Hant": "在錨點基礎上再縱向偏移多少像素（預設 0，正數向上，負數向下）。",
+      "en": "Extra vertical offset in pixels from the anchor (default 0; positive moves up).",
+      "ja": "アンカーからの縦方向の追加オフセット（ピクセル、既定 0、正で上）。"
     }
   }
 }

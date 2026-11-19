@@ -1,5 +1,6 @@
 using System;
 using CesiumLoader.SDK.Configuration;
+using CesiumLoader.SDK.UserInterface;
 using UnityEngine;
 
 namespace RandomHeroSelectMod
@@ -26,11 +27,19 @@ namespace RandomHeroSelectMod
         internal int ClickIntervalMs = 80;
         internal int DelayMilliseconds = 600;
         internal int ConfirmDelayMilliseconds = 400;
-        internal bool AutoConfirm = true;
         internal bool RerollOnTaken = true;
         internal int MaxRetry = 3;
         internal bool AutoConfirmSkin = false;
         internal int RandomSeed = 0;
+
+        /// <summary>按钮停靠的屏幕锚点；默认右边居中。</summary>
+        internal WidgetAnchor ButtonAnchor = WidgetAnchor.MiddleRight;
+
+        /// <summary>在锚点基础上额外横向偏移（像素，正数向右）。</summary>
+        internal int ButtonOffsetX = 0;
+
+        /// <summary>在锚点基础上额外纵向偏移（像素，正数向上）。</summary>
+        internal int ButtonOffsetY = 0;
 
         internal KeyCode ParsedTriggerKey = KeyCode.None;
         internal KeyCode ParsedRerollKey = KeyCode.None;
@@ -51,11 +60,14 @@ namespace RandomHeroSelectMod
             value.DelayMilliseconds = Clamp(config.GetInt("delayMilliseconds", 600), 0, MaxDelayMilliseconds);
             value.ConfirmDelayMilliseconds =
                 Clamp(config.GetInt("confirmDelayMilliseconds", 400), 0, MaxDelayMilliseconds);
-            value.AutoConfirm = config.GetBool("autoConfirm", true);
             value.RerollOnTaken = config.GetBool("rerollOnTaken", true);
             value.MaxRetry = Clamp(config.GetInt("maxRetry", 3), 0, 9);
             value.AutoConfirmSkin = config.GetBool("autoConfirmSkin", false);
             value.RandomSeed = config.GetInt("randomSeed", 0);
+
+            value.ButtonAnchor = ParseAnchor(config.GetString("buttonAnchor", "right"), WidgetAnchor.MiddleRight);
+            value.ButtonOffsetX = Clamp(config.GetInt("buttonOffsetX", 0), -4000, 4000);
+            value.ButtonOffsetY = Clamp(config.GetInt("buttonOffsetY", 0), -4000, 4000);
 
             value.ParsedTriggerKey = ParseKey(config.GetString("triggerKey", ""), KeyCode.None);
             value.ParsedRerollKey = ParseKey(config.GetString("rerollKey", ""), KeyCode.None);
@@ -75,13 +87,15 @@ namespace RandomHeroSelectMod
             Add(config, "clickIntervalMs", 80, ref changed);
             Add(config, "delayMilliseconds", 600, ref changed);
             Add(config, "confirmDelayMilliseconds", 400, ref changed);
-            Add(config, "autoConfirm", true, ref changed);
             Add(config, "rerollOnTaken", true, ref changed);
             Add(config, "maxRetry", 3, ref changed);
             Add(config, "autoConfirmSkin", false, ref changed);
             Add(config, "triggerKey", "", ref changed);
             Add(config, "rerollKey", "", ref changed);
             Add(config, "randomSeed", 0, ref changed);
+            Add(config, "buttonAnchor", "right", ref changed);
+            Add(config, "buttonOffsetX", 0, ref changed);
+            Add(config, "buttonOffsetY", 0, ref changed);
             if (changed) config.SaveIfDirty();
         }
 
@@ -109,6 +123,42 @@ namespace RandomHeroSelectMod
         {
             if (string.IsNullOrWhiteSpace(text)) return fallback;
             if (Enum.TryParse<KeyCode>(text.Trim(), true, out var parsed)) return parsed;
+            return fallback;
+        }
+
+        /// <summary>
+        /// 解析按钮锚点。接受 right / left / top / bottom / topRight / bottomLeft / center
+        /// 这类简称，也接受 WidgetAnchor 的完整枚举名（TopLeft、MiddleRight…）。
+        /// </summary>
+        private static WidgetAnchor ParseAnchor(string text, WidgetAnchor fallback)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return fallback;
+
+            string key = text.Trim().Replace("-", "").Replace("_", "").Replace(" ", "");
+            switch (key.ToLowerInvariant())
+            {
+                case "topleft": return WidgetAnchor.TopLeft;
+                case "top":
+                case "topcenter": return WidgetAnchor.Top;
+                case "topright": return WidgetAnchor.TopRight;
+                case "left":
+                case "middleleft": return WidgetAnchor.MiddleLeft;
+                case "center":
+                case "centre":
+                case "middle": return WidgetAnchor.Center;
+                case "right":
+                case "middleright": return WidgetAnchor.MiddleRight;
+                case "bottomleft": return WidgetAnchor.BottomLeft;
+                case "bottom":
+                case "bottomcenter": return WidgetAnchor.Bottom;
+                case "bottomright": return WidgetAnchor.BottomRight;
+            }
+
+            if (Enum.TryParse<WidgetAnchor>(text.Trim(), true, out var parsed) &&
+                parsed != WidgetAnchor.Stretch)
+            {
+                return parsed;
+            }
             return fallback;
         }
     }

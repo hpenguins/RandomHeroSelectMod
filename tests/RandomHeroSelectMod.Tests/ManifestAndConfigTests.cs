@@ -52,8 +52,9 @@ namespace RandomHeroSelectMod.Tests
             string[] expected =
             {
                 "enabled", "pveLevel", "requireOwned", "shuffleMinClicks", "shuffleMaxClicks",
-                "clickIntervalMs", "delayMilliseconds", "confirmDelayMilliseconds", "autoConfirm",
-                "rerollOnTaken", "maxRetry", "autoConfirmSkin", "triggerKey", "rerollKey", "randomSeed"
+                "clickIntervalMs", "delayMilliseconds", "confirmDelayMilliseconds",
+                "rerollOnTaken", "maxRetry", "autoConfirmSkin", "triggerKey", "rerollKey", "randomSeed",
+                "buttonAnchor", "buttonOffsetX", "buttonOffsetY"
             };
 
             foreach (var key in expected)
@@ -72,8 +73,9 @@ namespace RandomHeroSelectMod.Tests
             string[] keys =
             {
                 "enabled", "pveLevel", "requireOwned", "shuffleMinClicks", "shuffleMaxClicks",
-                "clickIntervalMs", "delayMilliseconds", "confirmDelayMilliseconds", "autoConfirm",
-                "rerollOnTaken", "maxRetry", "autoConfirmSkin", "triggerKey", "rerollKey", "randomSeed"
+                "clickIntervalMs", "delayMilliseconds", "confirmDelayMilliseconds",
+                "rerollOnTaken", "maxRetry", "autoConfirmSkin", "triggerKey", "rerollKey", "randomSeed",
+                "buttonAnchor", "buttonOffsetX", "buttonOffsetY"
             };
             string[] languages = { "zh-Hans", "zh-Hant", "en", "ja" };
 
@@ -116,6 +118,9 @@ namespace RandomHeroSelectMod.Tests
             Assert.InRange((int)config["confirmDelayMilliseconds"], 0, 10000);
             Assert.Equal(0, (int)config["randomSeed"]);
             Assert.True((int)config["shuffleMaxClicks"] >= (int)config["shuffleMinClicks"]);
+            Assert.Equal("right", (string)config["buttonAnchor"]);
+            Assert.Equal(0, (int)config["buttonOffsetX"]);
+            Assert.Equal(0, (int)config["buttonOffsetY"]);
         }
     }
 }

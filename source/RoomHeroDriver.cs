@@ -14,8 +14,8 @@ namespace RandomHeroSelectMod
     /// 两条路：
     ///   1) UI 路径(默认)：直接触发面板自己的按钮回调，游戏原生行为(选中框、音效、气泡、发包)全部照旧。
     ///      —— 点卡 = <c>UIRoomHero_Button_SelectHero_2.onClick.Call()</c>
-    ///         确定 = <c>UIRoomHeroPanel.btn_SureHero.onClick.Call()</c>
     ///         选皮肤 = <c>UIRoomHeroPanel.List_SelectSkin.onClickItem.Call(item)</c> + <c>btn_SureSkin.onClick.Call()</c>
+    ///      不碰「确定」：确认由玩家自己点。
     ///   2) 协议兜底：面板结构对不上(热更改了下标/字段)时退回 <see cref="GameActions"/>，
     ///      功能不失效，只是少了界面演出。
     ///
@@ -197,33 +197,10 @@ namespace RandomHeroSelectMod
             catch { return false; }
         }
 
-        /// <summary>点「确定」（触发面板自己的 <c>RequestSureHero</c> → <c>AffirmHeroC2S</c>）。</summary>
-        internal bool ClickConfirm(RoomHeroPanel panel)
-        {
-            try
-            {
-                var ui = panel != null ? panel.UIObject : null;
-                var button = ui != null ? ui.btn_SureHero : null;
-                if (button == null) return false;
-                if (button.grayed || !button.touchable) return false;
-                if (button.onClick == null || button.onClick.isEmpty) return false;
-                button.onClick.Call();
-                return true;
-            }
-            catch { return false; }
-        }
-
         /// <summary>协议兜底：直接选角色（不经过界面）。</summary>
         internal bool SelectHeroByProtocol(int heroId)
         {
             try { return heroId > 0 && GameActions.SelectHero(heroId); }
-            catch { return false; }
-        }
-
-        /// <summary>协议兜底：直接确认。</summary>
-        internal bool ConfirmHeroByProtocol()
-        {
-            try { return GameActions.ConfirmHero(false); }
             catch { return false; }
         }
 

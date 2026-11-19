@@ -20,16 +20,15 @@ namespace RandomHeroSelectMod
     }
 
     /// <summary>
-    /// 选人阶段的「随机点卡 → 随机落定 → 自动确认」状态机。
+    /// 选人阶段的「随机点卡 → 随机落定」状态机，由屏幕右侧居中的按钮触发。
     ///
     /// 时序(全部走真实点击，每次点击都向服务器广播一条 ChoiceHeroC2S2):
-    ///   HeroSelectionStarted
+    ///   玩家点「随机选人」按钮(或按 triggerKey)
     ///     → Delay  (等卡面渲染, delayMilliseconds)
     ///     → Shuffle(按洗好的整副牌逐张点, 每张每轮最多点一次, clickIntervalMs 抖动)
     ///     → Settle (停一下让选中动画走完)
-    ///     → Final  (从满级候选里随机落定, 必要时补一次点击)
-    ///     → Confirm(confirmDelayMilliseconds 后点「确定」)
-    ///     → Done
+    ///     → Pick   (从满级候选里随机落定, 必要时补一次点击)
+    ///     → Done   (不自动确认, 由玩家自己点「确定」)
     ///   HeroSelected(heroTaken=true) → 从剩余候选重抽(最多 maxRetry 次)
     /// </summary>
     public sealed class RandomHeroSelect : ModBase
@@ -40,8 +39,6 @@ namespace RandomHeroSelectMod
             Delay,
             Shuffle,
             Settle,
-            Final,
-            Confirm,
             SkinConfirm,
             Done,
             Aborted
@@ -58,6 +55,7 @@ namespace RandomHeroSelectMod
 
         private RandomHeroSelectSettings _settings = new RandomHeroSelectSettings();
         private readonly RoomHeroDriver _driver = new RoomHeroDriver();
+        private RandomSelectButton _button;
 
         private Random _random = new Random();
         private Phase _phase = Phase.Idle;
@@ -92,11 +90,11 @@ namespace RandomHeroSelectMod
         private long _skinDeadlineTicks;
 
         public override string Name { get { return "随机选人"; } }
-        public override string Version { get { return "1.0.0"; } }
+        public override string Version { get { return "1.2.0"; } }
         public override string Author { get { return "hpenguins"; } }
         public override string Description
         {
-            get { return "选人阶段模拟随机点击多张满级角色卡，最后随机落定一个并自动确认；被抢时自动重抽。"; }
+            get { return "选人阶段点屏幕右侧的按钮，模拟随机点击多张满级角色卡并随机落定一个；不会自动确认，被抢时自动重抽，按钮位置可调。"; }
         }
 
         public override void OnInitialize()
@@ -122,29 +120,38 @@ namespace RandomHeroSelectMod
             GameEvents.StartAutoHook();
             GameEvents.EnsureHooked();
 
+            if (_button == null) _button = new RandomSelectButton(Log, RequestRandomPick);
+            ApplyButtonPlacement();
+
             Log.Info("已订阅选人事件；满级阈值=" + _settings.ResolveMaxPveLevel() +
                      "，乱点 " + _settings.ShuffleMinClicks + "–" + _settings.ShuffleMaxClicks +
-                     " 次，间隔约 " + _settings.ClickIntervalMs + "ms，自动确认=" + _settings.AutoConfirm);
+                     " 次，间隔约 " + _settings.ClickIntervalMs + "ms；选人阶段点右侧按钮开始，不会自动确认");
         }
 
         public override void OnConfigChanged()
         {
             ReadConfig();
             ResetRandom();
+            ApplyButtonPlacement();
             Log.Info("配置已热重载：enabled=" + _settings.Enabled +
                      "，满级阈值=" + _settings.ResolveMaxPveLevel() +
-                     "，自动确认=" + _settings.AutoConfirm);
+                     "，按钮锚点=" + _settings.ButtonAnchor);
         }
 
         public override void OnUpdate()
         {
-            if (!_settings.Enabled) return;
+            if (!_settings.Enabled)
+            {
+                if (_button != null) _button.SetVisible(false);
+                return;
+            }
 
             int frame = UnityTime.FrameCount;
             if (frame != _lastFrame) _lastFrame = frame;
             else return;
 
             HandleHotkeys();
+            UpdateButton();
             Tick();
         }
 
@@ -152,6 +159,11 @@ namespace RandomHeroSelectMod
         {
             GameEvents.HeroSelectionStarted -= OnHeroSelectionStarted;
             GameEvents.HeroSelected -= OnHeroSelected;
+            if (_button != null)
+            {
+                _button.Dispose();
+                _button = null;
+            }
             ResetSession();
         }
 
@@ -164,8 +176,8 @@ namespace RandomHeroSelectMod
             _pickedHeroId = 0;
             _sessionArmed = false;
             ResetSession();
-            Log.Info("进入选人阶段" + (room != null ? "（房间 " + room.Id + "）" : "") + "，准备随机选人");
-            ArmSession();
+            Log.Info("进入选人阶段" + (room != null ? "（房间 " + room.Id + "）" : "") +
+                     "，点屏幕右侧的「随机选人」按钮开始");
         }
 
         private void OnHeroSelected(long playerId, int heroId, bool heroTaken)
@@ -199,19 +211,16 @@ namespace RandomHeroSelectMod
                     return;
                 }
 
-                if (_phase == Phase.Idle)
-                {
-                    // 兜底：没收到事件但已经在选人阶段（例如 mod 中途加载）。
-                    if (!_sessionArmed && _driver.CanSelectHero) ArmSession();
-                    return;
-                }
+                if (_phase == Phase.Idle) return;
 
                 long now = DateTime.UtcNow.Ticks;
 
                 // 先处理上一帧收到的事件（网络线程投递），再做本帧阶段推进。
                 if (HandlePending(now)) return;
 
-                if (now - _sessionStartedTicks > SessionTimeoutTicks)
+                // 只有乱点阶段才计时超时；落定后要等玩家手动确认，不能按会话时长打断。
+                if ((_phase == Phase.Delay || _phase == Phase.Shuffle || _phase == Phase.Settle) &&
+                    now - _sessionStartedTicks > SessionTimeoutTicks)
                 {
                     Log.Warn("随机选人超时，交回游戏倒计时");
                     _phase = Phase.Aborted;
@@ -231,17 +240,8 @@ namespace RandomHeroSelectMod
 
                     case Phase.Settle:
                         if (now < _phaseAtTicks) return;
-                        DoFinalPick(now);
+                        DoFinalPick();
                         break;
-
-                    case Phase.Final:
-                        if (now < _phaseAtTicks) return;
-                        DoConfirm(now);
-                        break;
-
-                    case Phase.Confirm:
-                        // 已发出确认，等服务器回 HeroSelected；只有会话超时会兜底。
-                        return;
 
                     case Phase.SkinConfirm:
                         if (!_settings.AutoConfirmSkin) { FinishSession(); return; }
@@ -369,7 +369,7 @@ namespace RandomHeroSelectMod
                 _settings.ClickIntervalMs, RandomHeroSelectSettings.ClickIntervalJitter, _random));
         }
 
-        private void DoFinalPick(long now)
+        private void DoFinalPick()
         {
             _panel = _driver.Panel;
             if (_panel == null)
@@ -398,50 +398,9 @@ namespace RandomHeroSelectMod
                 ClickCandidate(target);
             }
 
-            Log.Info("落定：" + HeroName(target.HeroId) + "（Lv" + target.PveLevel + "）");
-
-            _phase = Phase.Final;
-            _phaseAtTicks = now + DelayTicks(_settings.ConfirmDelayMilliseconds);
-        }
-
-        private void DoConfirm(long now)
-        {
-            if (!_settings.AutoConfirm)
-            {
-                Log.Info("已落定 " + HeroName(_pickedHeroId) + "，autoConfirm=false，等待你手动确认");
-                FinishSession();
-                return;
-            }
-
-            _panel = _driver.Panel;
-            if (_pickedHeroId <= 0)
-            {
-                _phase = Phase.Aborted;
-                return;
-            }
-
-            bool sent;
-            if (_panel != null)
-            {
-                sent = _driver.ClickConfirm(_panel);
-                if (!sent) sent = _driver.ConfirmHeroByProtocol();
-            }
-            else
-            {
-                sent = _driver.ConfirmHeroByProtocol();
-            }
-
-            if (sent)
-            {
-                Log.Info("已发出确认：" + HeroName(_pickedHeroId));
-                _phase = Phase.Confirm;
-                _phaseAtTicks = now + DelayTicks(_settings.ConfirmDelayMilliseconds);
-            }
-            else
-            {
-                Log.Warn("确认发送失败（可能已不在选人阶段）");
-                _phase = Phase.Aborted;
-            }
+            Log.Info("落定：" + HeroName(target.HeroId) + "（Lv" + target.PveLevel +
+                     "），请手动点「确定」");
+            FinishSession();
         }
 
         /// <summary>处理上一帧收到的选人结果事件。返回 true 表示本帧已消费掉、不要再推进阶段。</summary>
@@ -530,10 +489,9 @@ namespace RandomHeroSelectMod
             _pickedHeroId = target.HeroId;
 
             ClickCandidate(target);
-            Log.Info("重抽 #" + _retryCount + " → " + HeroName(target.HeroId) + "（Lv" + target.PveLevel + "）");
-
-            _phase = Phase.Final;
-            _phaseAtTicks = DateTime.UtcNow.Ticks + DelayTicks(_settings.ConfirmDelayMilliseconds);
+            Log.Info("重抽 #" + _retryCount + " → " + HeroName(target.HeroId) + "（Lv" + target.PveLevel +
+                     "），请手动点「确定」");
+            FinishSession();
         }
 
         private void FallbackByProtocol()
@@ -555,9 +513,8 @@ namespace RandomHeroSelectMod
                 return;
             }
 
-            Log.Info("已用协议选中：" + HeroName(target.HeroId));
-            _phase = Phase.Final;
-            _phaseAtTicks = DateTime.UtcNow.Ticks + DelayTicks(_settings.ConfirmDelayMilliseconds);
+            Log.Info("已用协议选中：" + HeroName(target.HeroId) + "，请手动点「确定」");
+            FinishSession();
         }
 
         private void FinishSession()
@@ -638,17 +595,8 @@ namespace RandomHeroSelectMod
                 if (_settings.ParsedTriggerKey != KeyCode.None &&
                     InputService.IsKeyDown(_settings.ParsedTriggerKey))
                 {
-                    if (!_driver.CanSelectHero)
-                    {
-                        Log.Info("快捷键触发：当前不在选人阶段");
-                    }
-                    else
-                    {
-                        _sessionArmed = false;
-                        ResetSession();
-                        ArmSession();
-                        Log.Info("快捷键触发随机选人");
-                    }
+                    Log.Info("快捷键触发随机选人");
+                    RequestRandomPick();
                 }
 
                 if (_settings.ParsedRerollKey != KeyCode.None &&
@@ -660,6 +608,51 @@ namespace RandomHeroSelectMod
                 }
             }
             catch { }
+        }
+
+        /// <summary>
+        /// 按钮 / 快捷键入口：显式开始一次随机选人。
+        /// 进入选人阶段本身不会触发，必须由玩家点右侧按钮（或按 triggerKey）。
+        /// </summary>
+        private void RequestRandomPick()
+        {
+            try
+            {
+                if (!_settings.Enabled)
+                {
+                    Log.Info("随机选人已关闭（enabled=false）");
+                    return;
+                }
+                if (!_driver.CanSelectHero)
+                {
+                    Log.Info("当前不在选人阶段，无法开始随机选人");
+                    return;
+                }
+
+                ResetSession();
+                ArmSession();
+                if (_sessionArmed) Log.Info("已激活随机选人");
+                else Log.Warn("随机选人启动失败：选人面板尚未就绪，稍后再点一次");
+            }
+            catch (Exception e)
+            {
+                Log.Warn("启动随机选人失败: " + e.Message);
+            }
+        }
+
+        /// <summary>把配置里的按钮锚点 / 偏移同步给控件（热重载后立即生效）。</summary>
+        private void ApplyButtonPlacement()
+        {
+            if (_button == null) return;
+            _button.SetPlacement(_settings.ButtonAnchor, _settings.ButtonOffsetX, _settings.ButtonOffsetY);
+        }
+
+        /// <summary>选人阶段显示按钮，其余时候隐藏。</summary>
+        private void UpdateButton()
+        {
+            if (_button == null) return;
+            bool show = _driver.CanSelectHero && _driver.Panel != null;
+            _button.SetVisible(show);
         }
 
         private void ReadConfig()
